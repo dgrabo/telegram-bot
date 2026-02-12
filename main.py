@@ -38,15 +38,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await query.answer()
     if query.data == "find_restaurants":
 
-        keyboard = [[KeyboardButton("Send Location", request_location=True)]]
+        keyboard = [[KeyboardButton("Send Location\n(make sure that your GPS/location is on)", request_location=True)]]
         markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
 
-        await query.message.reply_text("Tekst", reply_markup=markup)
+        await query.message.reply_text("Press the button for sharing the location\n(make sure that your GPS/location is on)", reply_markup=markup)
+
+async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    location_latitude = update.message.location.latitude
+    location_longitude = update.message.location.longitude
+
+    await update.message.reply_text(f'Your location: {location_latitude}, {location_longitude}')
+
 
 def main():
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.LOCATION, location_handler))
 
     app.run_polling()
 
