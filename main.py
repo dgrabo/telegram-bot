@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import logging
 import os
+import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -14,9 +15,11 @@ from telegram.ext import (
     filters
 )
 
+
 load_dotenv()
 token = os.getenv("BOT_TOKEN")
-MENU, OPTION1, OPTION2 = range(3)
+google_api_key = os.getenv("GOOGLE_API_KEY")
+# MENU, OPTION1, OPTION2 = range(3)
 
 if not token:
     raise ValueError("BOT_TOKEN not loaded.")
@@ -49,6 +52,29 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     await update.message.reply_text(f'Your location: {location_latitude}, {location_longitude}')
 
+def search_restaurants(lat, lng):
+    url = "https://places.googleapis.com/v1/places:searchNearby"
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": google_api_key,
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating"
+    }
+    body = {
+        "includedTypes": ["restaurant"],
+        "maxResultCount": 5,
+        "locationRestriction":
+        {
+            "circle": {
+                "center":{
+                    "latitude": lat, "longitude": lng
+                },
+                "radius": 1000.0
+            }
+        }
+    }
+    response = requests.post(url, headers=headers, json=body)
+    
+    return response.json()
 
 def main():
     app = Application.builder().token(token).build()
