@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import logging
+import json
 import os
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
@@ -50,7 +51,15 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     location_latitude = update.message.location.latitude
     location_longitude = update.message.location.longitude
 
-    await update.message.reply_text(f'Your location: {location_latitude}, {location_longitude}')
+    results = search_restaurants(location_latitude, location_longitude)
+    message = ""
+    for place in results["places"]:
+        name = place["displayName"]["text"]
+        adress = place["formattedAddress"]
+        rating = place["rating"]
+        message += f"Restaurant{name}\nAddress{adress}\nRating{rating}\n\n"
+
+    await update.message.reply_text(message)
 
 def search_restaurants(lat, lng):
     url = "https://places.googleapis.com/v1/places:searchNearby"
@@ -73,8 +82,9 @@ def search_restaurants(lat, lng):
         }
     }
     response = requests.post(url, headers=headers, json=body)
-    
-    return response.json()
+    data = response.json()
+    logger.info(json.dumps(data, indent=2, ensure_ascii=False))
+    return data
 
 def main():
     app = Application.builder().token(token).build()
