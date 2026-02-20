@@ -32,10 +32,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    keyboard = [[InlineKeyboardButton("Find restaurants", callback_data="find_restaurants")]]
+    keyboard = [[InlineKeyboardButton("🍽 Find restaurants", callback_data="find_restaurants")]]
     markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Option:", reply_markup=markup)
+    await update.message.reply_text("Welcome! What would you like to do?", reply_markup=markup)
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -48,25 +48,45 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await query.message.reply_text("Press the button for sharing the location\n(make sure that your GPS/location is on)", reply_markup=markup)
 
 async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    location_latitude = update.message.location.latitude
-    location_longitude = update.message.location.longitude
 
-    results = search_restaurants(location_latitude, location_longitude)
-    message = ""
-    for place in results["places"]:
-        name = place["displayName"]["text"]
-        adress = place["formattedAddress"]
-        rating = place["rating"]
-        message += f"Restaurant{name}\nAddress{adress}\nRating{rating}\n\n"
+    try:
+        location_latitude = update.message.location.latitude
+        location_longitude = update.message.location.longitude
 
-    await update.message.reply_text(message)
+        results = search_restaurants(location_latitude, location_longitude)
+        if "places" not in results or len(results["places"]) == 0:
+            await update.message.reply_text("No restaurants found nearby")
+            return
+        message = ""
+        for place in results["places"]:
+            displayName = place.get("displayName",{})
+            name = displayName.get("text","N/A")
+            location = place.get("location",{})
+            loc_lati = location.get("latitude")
+            loc_long = location.get("longitude")
+            adress = place.get("formattedAddress", "N/A")
+            rating = place.get("rating", "N/A")
+            message += f"Restaurant: {name}\nAddress: {adress}\nRating: {rating}\n"
+            if loc_lati and loc_long:
+                message += f"Link: https://www.google.com/maps/search/?api=1&query={loc_lati},{loc_long}\n"
+            else:
+                message += "\n"
+
+
+        await update.message.reply_text(message)
+    except Exception as e:
+        logger.error(e)
+        await update.message.reply_text("Something went wrong")
+
+
+
 
 def search_restaurants(lat, lng):
     url = "https://places.googleapis.com/v1/places:searchNearby"
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": google_api_key,
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating"
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.location"
     }
     body = {
         "includedTypes": ["restaurant"],
