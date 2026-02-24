@@ -33,27 +33,47 @@ logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [[InlineKeyboardButton("🍽 Find restaurants", callback_data="find_restaurants")]]
+    # keyboard = [[InlineKeyboardButton("500m", callback_data="radius_500")],[InlineKeyboardButton("1km", callback_data="radius_1000")],[InlineKeyboardButton("2km", callback_data="radius_2000")]]
     markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Welcome! What would you like to do?", reply_markup=markup)
+    await update.message.reply_text("Hello there!", reply_markup=markup)
+
+async def radius_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    if query.data == "radius_500":
+        context.user_data["radius"] = 500
+    elif query.data == "radius_1000":
+        context.user_data["radius"] = 1000
+    else:
+        context.user_data["radius"] = 2000
+    
+    keyboard = [[KeyboardButton("Send Location\n(make sure that your GPS/location is on)", request_location=True)]]
+    markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+    
+    await query.message.reply_text("Press the button for sharing the location\n(make sure that your GPS/location is on)", reply_markup=markup)
+        
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     if query.data == "find_restaurants":
 
-        keyboard = [[KeyboardButton("Send Location\n(make sure that your GPS/location is on)", request_location=True)]]
-        markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
-
-        await query.message.reply_text("Press the button for sharing the location\n(make sure that your GPS/location is on)", reply_markup=markup)
+        # keyboard = [[KeyboardButton("Send Location\n(make sure that your GPS/location is on)", request_location=True)]]
+        # markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        keyboard = [[InlineKeyboardButton("500m", callback_data="radius_500")],[InlineKeyboardButton("1km", callback_data="radius_1000")],[InlineKeyboardButton("2km", callback_data="radius_2000")]]
+        markup = InlineKeyboardMarkup(keyboard)
+        # await query.message.reply_text("Press the button for sharing the location\n(make sure that your GPS/location is on)", reply_markup=markup)
+        await query.message.reply_text("Chose search radius: ", reply_markup=markup)
 
 async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
         location_latitude = update.message.location.latitude
         location_longitude = update.message.location.longitude
+        radius = context.user_data.get("radius", 1000)
 
-        results = search_restaurants(location_latitude, location_longitude)
+        results = search_restaurants(location_latitude, location_longitude, radius)
         if "places" not in results or len(results["places"]) == 0:
             await update.message.reply_text("No restaurants found nearby")
             return
@@ -81,7 +101,7 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 
-def search_restaurants(lat, lng):
+def search_restaurants(lat, lng, radius):
     url = "https://places.googleapis.com/v1/places:searchNearby"
     headers = {
         "Content-Type": "application/json",
@@ -97,7 +117,7 @@ def search_restaurants(lat, lng):
                 "center":{
                     "latitude": lat, "longitude": lng
                 },
-                "radius": 1000.0
+                "radius": radius
             }
         }
     }
@@ -109,8 +129,10 @@ def search_restaurants(lat, lng):
 def main():
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(CallbackQueryHandler(button_handler, pattern="find_restaurants"))
+    app.add_handler(CallbackQueryHandler(radius_handler, pattern="^radius_"))
     app.add_handler(MessageHandler(filters.LOCATION, location_handler))
+
 
     app.run_polling()
 
