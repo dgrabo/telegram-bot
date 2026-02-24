@@ -20,7 +20,6 @@ from telegram.ext import (
 load_dotenv()
 token = os.getenv("BOT_TOKEN")
 google_api_key = os.getenv("GOOGLE_API_KEY")
-# MENU, OPTION1, OPTION2 = range(3)
 
 if not token:
     raise ValueError("BOT_TOKEN not loaded.")
@@ -33,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [[InlineKeyboardButton("🍽 Find restaurants", callback_data="find_restaurants")]]
-    # keyboard = [[InlineKeyboardButton("500m", callback_data="radius_500")],[InlineKeyboardButton("1km", callback_data="radius_1000")],[InlineKeyboardButton("2km", callback_data="radius_2000")]]
+    
     markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Hello there!", reply_markup=markup)
@@ -58,12 +57,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer()
     if query.data == "find_restaurants":
-
-        # keyboard = [[KeyboardButton("Send Location\n(make sure that your GPS/location is on)", request_location=True)]]
-        # markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
         keyboard = [[InlineKeyboardButton("500m", callback_data="radius_500")],[InlineKeyboardButton("1km", callback_data="radius_1000")],[InlineKeyboardButton("2km", callback_data="radius_2000")]]
         markup = InlineKeyboardMarkup(keyboard)
-        # await query.message.reply_text("Press the button for sharing the location\n(make sure that your GPS/location is on)", reply_markup=markup)
+        
         await query.message.reply_text("Chose search radius: ", reply_markup=markup)
 
 async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -91,9 +87,11 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 message += f"Link: https://www.google.com/maps/search/?api=1&query={loc_lati},{loc_long}\n"
             else:
                 message += "\n"
+            
+        keyboard = [[InlineKeyboardButton("🔄 Search again", callback_data="find_restaurants")]]
+        markup = InlineKeyboardMarkup(keyboard)
 
-
-        await update.message.reply_text(message)
+        await update.message.reply_text(message, reply_markup=markup)
     except Exception as e:
         logger.error(e)
         await update.message.reply_text("Something went wrong")
