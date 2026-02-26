@@ -96,7 +96,7 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             loc_long = location.get("longitude")
             adress = place.get("formattedAddress", "N/A")
             rating = place.get("rating", "N/A")
-            message += f"Restaurant: {name}\nAddress: {adress}\nRating: {rating}\n"
+            message += f"Radius: {radius}\nRestaurant: {name}\nAddress: {adress}\nRating: {rating}\n"
             if loc_lati and loc_long:
                 message += f"Link: https://www.google.com/maps/search/?api=1&query={loc_lati},{loc_long}\n"
             else:
