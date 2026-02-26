@@ -87,7 +87,7 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         if "places" not in results or len(results["places"]) == 0:
             await update.message.reply_text("No restaurants found nearby")
             return
-        message = ""
+        message = f"Restaurants for radius: {radius}\n------------------------------\n"
         for place in results["places"]:
             displayName = place.get("displayName",{})
             name = displayName.get("text","N/A")
@@ -96,7 +96,7 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             loc_long = location.get("longitude")
             adress = place.get("formattedAddress", "N/A")
             rating = place.get("rating", "N/A")
-            message += f"Radius: {radius}\nRestaurant: {name}\nAddress: {adress}\nRating: {rating}\n"
+            message += f"Restaurant: {name}\nAddress: {adress}\nRating: {rating}\n"
             if loc_lati and loc_long:
                 message += f"Link: https://www.google.com/maps/search/?api=1&query={loc_lati},{loc_long}\n"
             else:
