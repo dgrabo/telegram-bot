@@ -15,6 +15,20 @@ from telegram.ext import (
     MessageHandler,
     filters
 )
+from threading import Thread
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+    def log_message(self, format, *args):
+        pass
+
+def run_health_server():
+    server = HTTPServer(("0.0.0.0", 10000), HealthHandler)
+    server.serve_forever()
 
 
 load_dotenv()
@@ -131,7 +145,7 @@ def main():
     app.add_handler(CallbackQueryHandler(radius_handler, pattern="^radius_"))
     app.add_handler(MessageHandler(filters.LOCATION, location_handler))
 
-
+    Thread(target=run_health_server, daemon=True).start()
     app.run_polling()
 
 if __name__ == "__main__":
