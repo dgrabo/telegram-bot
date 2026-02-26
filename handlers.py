@@ -49,7 +49,7 @@ async def location_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         if "places" not in results or len(results["places"]) == 0:
             await update.message.reply_text("No restaurants found nearby")
             return
-        message = f"Restaurants for radius: {radius}\n------------------------------\n"
+        message = f"Restaurants for radius: {radius} {"m" if radius < 1000 else "km"} \n------------------------------\n"
         for place in results["places"]:
             displayName = place.get("displayName",{})
             name = displayName.get("text","N/A")
